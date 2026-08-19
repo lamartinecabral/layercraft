@@ -1,6 +1,6 @@
 # LayerCraft
 
-LayerCraft is a browser-based, multi-layer image editor for building simple image compositions. It runs entirely in the browser and uses an HTML canvas for rendering, so there is no backend or project upload required.
+LayerCraft is a lightweight, browser-based image editor for creating simple compositions from multiple layers. It runs entirely in the browser and renders with HTML Canvas, so your images stay on your device and no backend or project upload is required. The project began in Gemini Canvas and later evolved through Gemini CLI with the `gemini-3.5-flash-lite` model.
 
 ## Run locally
 
@@ -25,7 +25,8 @@ The command serves the `docs/` directory using Python's built-in HTTP server. Op
 - LayerCraft runs entirely in the browser, so projects are not saved automatically. Export your work before closing or refreshing the page.
 - Exported files are flattened images; the editable layer structure is not included.
 - Performance depends on the browser and available memory, especially with large images, large canvases, or many layers.
-- The editor supports image composition and basic adjustments, but it does not provide advanced features such as text editing, vector tools, or non-destructive project files.
+- Adjustments are available only in the current session; there is no project-file format to reopen later.
+- The editor does not provide text editing or vector tools.
 
 ## Project structure
 
@@ -41,7 +42,7 @@ The command serves the `docs/` directory using Python's built-in HTTP server. Op
 
 ## Development
 
-Run the linter:
+Run the linter (Biome is invoked through `npx`):
 
 ```bash
 npm run lint
