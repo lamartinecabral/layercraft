@@ -27,6 +27,11 @@ const opacitySlider = document.getElementById('opacity-slider');
 const opacityValDisplay = document.getElementById('opacity-val-display');
 const blendModeSelect = document.getElementById('blend-mode-select');
 const inputFile = document.getElementById('input-file');
+const canvasSizeModal = document.getElementById('canvas-size-modal');
+const canvasSizeForm = document.getElementById('canvas-size-form');
+const canvasWidthInput = document.getElementById('canvas-width-input');
+const canvasHeightInput = document.getElementById('canvas-height-input');
+const canvasSizeError = document.getElementById('canvas-size-error');
 
 // Filter Controls
 const filterBrightness = document.getElementById('filter-brightness');
@@ -1144,6 +1149,37 @@ function setupEventListeners() {
   });
 
   document.getElementById('btn-zoom-fit').addEventListener('click', fitCanvasToScreen);
+
+  // Canvas Size Modal
+  document.getElementById('btn-canvas-size').addEventListener('click', () => {
+    canvasWidthInput.value = state.canvasWidth;
+    canvasHeightInput.value = state.canvasHeight;
+    canvasSizeError.classList.add('hidden');
+    canvasSizeModal.classList.remove('hidden');
+    canvasWidthInput.focus();
+    canvasWidthInput.select();
+  });
+
+  document.getElementById('btn-close-canvas-size').addEventListener('click', () => {
+    canvasSizeModal.classList.add('hidden');
+  });
+
+  canvasSizeForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const width = Number(canvasWidthInput.value);
+    const height = Number(canvasHeightInput.value);
+    const isValid = Number.isInteger(width) && Number.isInteger(height)
+      && width >= 1 && width <= 10000 && height >= 1 && height <= 10000;
+
+    if (!isValid) {
+      canvasSizeError.classList.remove('hidden');
+      return;
+    }
+
+    initCanvasDimensions(width, height);
+    canvasSizeModal.classList.add('hidden');
+    render();
+  });
 
   // Clear All
   document.getElementById('btn-clear-all').addEventListener('click', () => {
