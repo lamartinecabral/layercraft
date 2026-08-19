@@ -1132,13 +1132,13 @@ function setupEventListeners() {
 
   // Zoom Buttons
   document.getElementById('btn-zoom-in').addEventListener('click', () => {
-    state.zoom = Math.min(3, state.zoom + 0.15);
+    state.zoom = Math.min(3, Math.round(state.zoom * 8 + 1) / 8);
     applyViewportTransform();
     render();
   });
 
   document.getElementById('btn-zoom-out').addEventListener('click', () => {
-    state.zoom = Math.max(0.1, state.zoom - 0.15);
+    state.zoom = Math.max(0.125, Math.round(state.zoom * 8 - 1) / 8);
     applyViewportTransform();
     render();
   });
