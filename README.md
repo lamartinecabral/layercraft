@@ -34,7 +34,8 @@ The command serves the `docs/` directory using Python's built-in HTTP server. Op
 .
 ├── docs/
 │   ├── index.html   # Application markup and UI
-│   ├── index.js     # Editor state, rendering, and interactions
+│   ├── index.js     # Browser entry point
+│   ├── editor/      # Editor state, layers, rendering, UI, and interactions
 │   └── index.css    # Custom styling
 ├── biome.json       # Biome configuration
 └── package.json     # Development scripts
