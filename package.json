@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "lint": "npx @biomejs/biome lint",
+    "start": "python3 -m http.server -d docs 3000",
+    "test": "npm run lint"
+  }
+}

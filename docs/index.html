@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LayerCraft - Multi-Layer Image Editor</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+<body class="h-full flex flex-col font-sans overflow-hidden select-none">
+
+  <!-- Top Navigation Bar -->
+  <header class="h-14 border-b border-slate-800 bg-slate-900/90 backdrop-blur px-4 flex items-center justify-between shrink-0 z-50">
+    <!-- Brand & Title -->
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+        <i data-lucide="layers" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <h1 class="text-base font-bold tracking-tight text-white hidden sm:flex items-center gap-2">
+          LayerCraft
+        </h1>
+      </div>
+    </div>
+
+    <!-- Project & Canvas Actions -->
+    <div class="flex items-center gap-2">
+      <!-- Unified Add Layer Dropdown -->
+      <div class="relative">
+        <button id="btn-add-layer-dropdown" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shadow-md shadow-indigo-600/20">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Add Layer</span>
+          <i data-lucide="chevron-down" class="w-3.5 h-3.5 opacity-80 ml-0.5"></i>
+        </button>
+        <div id="add-layer-menu" class="absolute right-0 mt-1 w-48 bg-slate-900 border border-slate-800 rounded-lg shadow-xl py-1.5 hidden z-50">
+          <button id="btn-add-image" class="w-full flex items-center gap-2 px-3.5 py-2 text-xs text-slate-200 hover:bg-slate-800 transition text-left">
+            <i data-lucide="image" class="w-4 h-4 text-indigo-400"></i>
+            <span>Image Layer...</span>
+          </button>
+          <button id="btn-add-solid" class="w-full flex items-center gap-2 px-3.5 py-2 text-xs text-slate-200 hover:bg-slate-800 transition text-left">
+            <i data-lucide="circle" class="w-4 h-4 text-slate-400"></i>
+            <span>Solid Color Layer...</span>
+          </button>
+        </div>
+      </div>
+      <input type="file" id="input-file" accept="image/*" class="hidden" multiple />
+
+      <div class="h-5 w-px bg-slate-800 mx-1"></div>
+
+      <button id="btn-toggle-sidebar" class="flex sm:hidden items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium px-3 py-2 rounded-lg border border-slate-700 transition" title="Toggle Layers Panel">
+        <i data-lucide="panels-top-left" class="w-4 h-4"></i>
+      </button>
+
+      <button id="btn-export" class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-medium px-3 py-2 rounded-lg border border-slate-700 transition">
+        <i data-lucide="download" class="w-4 h-4"></i>
+        <span>Export</span>
+      </button>
+      <button id="btn-clear-all" class="flex items-center gap-1.5 bg-slate-800 hover:bg-red-900/40 text-slate-400 hover:text-red-300 text-xs font-medium px-3 py-2 rounded-lg border border-slate-700 hover:border-red-800/50 transition">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace Grid -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- Left Toolbar -->
+    <aside class="w-14 border-r border-slate-800 bg-slate-900 flex flex-col items-center py-3 gap-3 shrink-0 z-10">
+      <button id="tool-move" class="tool-btn active p-2.5 rounded-lg text-indigo-400 bg-slate-800 hover:text-white transition relative group" title="Move & Transform Tool (V)">
+        <i data-lucide="move" class="w-5 h-5"></i>
+        <span class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-xs rounded text-slate-200 opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none z-30">Move / Transform</span>
+      </button>
+      <button id="tool-pan" class="tool-btn p-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition relative group" title="Pan Workspace (H)">
+        <i data-lucide="hand" class="w-5 h-5"></i>
+        <span class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-xs rounded text-slate-200 opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none z-30">Pan Viewport</span>
+      </button>
+
+      <div class="w-8 h-px bg-slate-800 my-1"></div>
+
+      <button id="btn-zoom-in" class="p-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition" title="Zoom In">
+        <i data-lucide="zoom-in" class="w-5 h-5"></i>
+      </button>
+      <button id="btn-zoom-out" class="p-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition" title="Zoom Out">
+        <i data-lucide="zoom-out" class="w-5 h-5"></i>
+      </button>
+      <button id="btn-zoom-fit" class="p-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition" title="Fit to Screen">
+        <i data-lucide="maximize" class="w-5 h-5"></i>
+      </button>
+    </aside>
+
+    <!-- Center Viewport Area -->
+    <main id="viewport-container" class="flex-1 bg-slate-950 relative overflow-hidden flex items-center justify-center cursor-default">
+      
+      <!-- Dynamic Canvas Render Target -->
+      <div id="canvas-wrapper" class="bg-checkerboard relative shadow-2xl transition-shadow duration-300">
+        <canvas id="editor-canvas" class="block rounded shadow-2xl cursor-crosshair"></canvas>
+      </div>
+
+      <!-- On-Screen Viewport Status Overlay -->
+      <div class="absolute bottom-4 left-4 bg-slate-900/80 backdrop-blur border border-slate-800 rounded-lg px-3 py-1.5 flex items-center gap-3 text-xs text-slate-400 pointer-events-none">
+        <span id="canvas-dim-display">1080 × 1080 px</span>
+        <span class="w-px h-3 bg-slate-700"></span>
+        <span id="zoom-level-display">100%</span>
+      </div>
+
+      <!-- Empty State Prompt -->
+      <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 z-10">
+        <div class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-indigo-400 mb-4 shadow-xl">
+          <i data-lucide="image" class="w-8 h-8"></i>
+        </div>
+        <h2 class="text-lg font-semibold text-slate-200 mb-1">No Layers in Project</h2>
+        <p class="text-sm text-slate-400 mb-5 max-w-sm text-center">Add an image to start editing, blend textures, and create compositions.</p>
+        <div class="flex items-center gap-3">
+          <button id="empty-add-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs px-4 py-2.5 rounded-lg transition shadow-lg shadow-indigo-500/20 flex items-center gap-2">
+            <i data-lucide="upload" class="w-4 h-4"></i> Upload Image
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Right Sidebar Panel -->
+    <aside id="right-sidebar" class="hidden sm:flex w-full sm:w-80 absolute sm:relative inset-y-0 right-0 border-l border-slate-800 bg-slate-900 flex-col shrink-0 z-30 shadow-2xl sm:shadow-none">
+      
+      <!-- Panel Header / Tabs -->
+      <div class="flex border-b border-slate-800 bg-slate-900/50 items-center">
+        <button id="tab-layers-btn" class="flex-1 py-3 text-xs font-semibold text-indigo-400 border-b-2 border-indigo-500 flex items-center justify-center gap-2">
+          <i data-lucide="layers" class="w-4 h-4"></i> Layers
+        </button>
+        <button id="tab-adjustments-btn" class="flex-1 py-3 text-xs font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent flex items-center justify-center gap-2">
+          <i data-lucide="sliders" class="w-4 h-4"></i> Adjustments
+        </button>
+        <button id="btn-close-sidebar" class="sm:hidden px-3 py-3 text-slate-400 hover:text-white transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- LAYERS TAB CONTENT -->
+      <div id="tab-layers-content" class="flex-1 flex flex-col min-h-0">
+        
+        <!-- Active Layer Global Settings (Blend Mode & Opacity) -->
+        <div id="active-layer-settings" class="p-3.5 border-b border-slate-800 bg-slate-900/80 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400">Blending Mode</span>
+            <select id="blend-mode-select" class="bg-slate-800 text-slate-200 border border-slate-700 text-xs rounded-md px-2 py-1 outline-none focus:border-indigo-500 transition w-36">
+              <option value="source-over">Normal</option>
+              <option value="multiply">Multiply</option>
+              <option value="screen">Screen</option>
+              <option value="overlay">Overlay</option>
+              <option value="darken">Darken</option>
+              <option value="lighten">Lighten</option>
+              <option value="color-dodge">Color Dodge</option>
+              <option value="color-burn">Color Burn</option>
+              <option value="hard-light">Hard Light</option>
+              <option value="soft-light">Soft Light</option>
+              <option value="difference">Difference</option>
+              <option value="exclusion">Exclusion</option>
+              <option value="hue">Hue</option>
+              <option value="saturation">Saturation</option>
+              <option value="color">Color</option>
+              <option value="luminosity">Luminosity</option>
+            </select>
+          </div>
+
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-400 font-medium">Opacity</span>
+              <span id="opacity-val-display" class="text-slate-200 font-mono">100%</span>
+            </div>
+            <input type="range" id="opacity-slider" min="0" max="100" value="100" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          </div>
+        </div>
+
+        <!-- Layer List Container -->
+        <div class="flex-1 overflow-y-auto p-2 space-y-1.5" id="layers-list">
+          <!-- Layer items dynamically rendered here -->
+        </div>
+
+        <!-- Layer List Toolbar Footer -->
+        <div class="p-2 border-t border-slate-800 bg-slate-900/90 flex items-center justify-between text-slate-400">
+          <div class="flex items-center gap-1">
+            <button id="btn-layer-up" class="p-1.5 hover:bg-slate-800 hover:text-white rounded transition" title="Move Layer Up">
+              <i data-lucide="arrow-up" class="w-4 h-4"></i>
+            </button>
+            <button id="btn-layer-down" class="p-1.5 hover:bg-slate-800 hover:text-white rounded transition" title="Move Layer Down">
+              <i data-lucide="arrow-down" class="w-4 h-4"></i>
+            </button>
+            <button id="btn-duplicate-layer" class="p-1.5 hover:bg-slate-800 hover:text-white rounded transition" title="Duplicate Layer">
+              <i data-lucide="copy-plus" class="w-4 h-4"></i>
+            </button>
+            <!-- this hidden button is kept for experimental purposes -->
+            <button id="btn-layer-filter-modal" class="hidden p-1.5 hover:bg-slate-800 hover:text-white rounded transition" title="Apply Math Function to Layer">
+              <i data-lucide="function-square" class="w-4 h-4"></i>
+            </button>
+            <button id="btn-merge-layer" class="p-1.5 hover:bg-slate-800 hover:text-white rounded transition opacity-40 cursor-not-allowed" title="Merge Selected Layer with Layer Below" disabled>
+              <i data-lucide="layer-arrow-down" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <button id="btn-delete-layer" class="p-1.5 hover:bg-red-900/30 text-slate-400 hover:text-red-400 rounded transition" title="Delete Layer">
+            <i data-lucide="trash" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ADJUSTMENTS TAB CONTENT -->
+      <div id="tab-adjustments-content" class="flex-1 flex flex-col min-h-0 hidden p-4 overflow-y-auto space-y-4">
+        <div id="adjustments-no-selection" class="text-xs text-slate-500 text-center py-8">
+          Select a layer to modify image adjustments.
+        </div>
+
+        <div id="adjustments-controls" class="space-y-4 hidden">
+          <!-- Brightness -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-300">Brightness</span>
+              <span id="brightness-val" class="text-slate-400 font-mono">100%</span>
+            </div>
+            <input type="range" id="filter-brightness" min="0" max="200" value="100" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          </div>
+
+          <!-- Contrast -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-300">Contrast</span>
+              <span id="contrast-val" class="text-slate-400 font-mono">100%</span>
+            </div>
+            <input type="range" id="filter-contrast" min="0" max="200" value="100" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          </div>
+
+          <!-- Saturation -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-300">Saturate</span>
+              <span id="saturate-val" class="text-slate-400 font-mono">100%</span>
+            </div>
+            <input type="range" id="filter-saturate" min="0" max="200" value="100" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          </div>
+
+          <!-- Hue Rotate -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-300">Hue Rotate</span>
+              <span id="hue-val" class="text-slate-400 font-mono">0°</span>
+            </div>
+            <input type="range" id="filter-hue" min="0" max="360" value="0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          </div>
+
+          <!-- Blur -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-300">Blur</span>
+              <span id="blur-val" class="text-slate-400 font-mono">0px</span>
+            </div>
+            <input type="range" id="filter-blur" min="0" max="30" value="0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          </div>
+
+          <!-- Gamma Correction -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-300">Gamma Correction</span>
+              <span id="gamma-val" class="text-slate-400 font-mono">0.0</span>
+            </div>
+            <input type="range" id="filter-gamma" min="-5" max="5" step="0.1" value="0" title="Positive: multiply gamma; negative: screen gamma" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          </div>
+
+          <!-- S-Curve Contrast -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs">
+              <span class="text-slate-300">S-Curve Contrast</span>
+              <span id="scurve-val" class="text-slate-400 font-mono">0.0</span>
+            </div>
+            <input type="range" id="filter-scurve" min="-5" max="5" step="0.1" value="0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+          </div>
+
+          <button id="btn-reset-filters" class="w-full mt-2 py-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-md transition">
+            Reset Adjustments
+          </button>
+
+          <!-- Layer Size -->
+          <div class="space-y-1">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-slate-300">Layer Size</span>
+              <span class="text-slate-500">px</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="space-y-1">
+                <span class="block text-[11px] text-slate-500">Width</span>
+                <input type="number" id="layer-width-input" min="20" step="1" class="w-full bg-slate-800 text-slate-200 border border-slate-700 text-xs rounded-md px-2 py-1.5 outline-none focus:border-indigo-500 transition">
+              </label>
+              <label class="space-y-1">
+                <span class="block text-[11px] text-slate-500">Height</span>
+                <input type="number" id="layer-height-input" min="20" step="1" class="w-full bg-slate-800 text-slate-200 border border-slate-700 text-xs rounded-md px-2 py-1.5 outline-none focus:border-indigo-500 transition">
+              </label>
+            </div>
+          </div>
+
+          <button id="btn-reset-transform" class="w-full mt-1.5 py-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-md transition">
+            Reset Position & Size
+          </button>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- Export Modal -->
+  <div id="export-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 w-96 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-semibold text-white flex items-center gap-2">
+          <i data-lucide="download" class="w-5 h-5 text-indigo-400"></i> Export Canvas
+        </h3>
+        <button id="btn-close-export" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">File Format</label>
+          <select id="export-format" class="w-full bg-slate-800 text-slate-200 border border-slate-700 text-xs rounded-lg px-3 py-2 outline-none">
+            <option value="image/png">PNG (Lossless, Transparency)</option>
+            <option value="image/jpeg">JPEG (Smaller File Size)</option>
+            <option value="image/webp">WEBP (Modern Web)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">File Name</label>
+          <input type="text" id="export-filename" value="layercraft-artwork" class="w-full bg-slate-800 text-slate-200 border border-slate-700 text-xs rounded-lg px-3 py-2 outline-none">
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button id="btn-confirm-export" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2.5 rounded-lg transition">
+          Download Image
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Solid Color Layer Modal -->
+  <div id="solid-layer-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 w-96 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-semibold text-white flex items-center gap-2">
+          <i data-lucide="circle" class="w-5 h-5 text-indigo-400"></i> Add Solid Color Layer
+        </h3>
+        <button id="btn-close-solid" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Hue -->
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs">
+            <span class="text-slate-300 font-medium">Hue</span>
+            <span id="solid-hue-val" class="text-indigo-400 font-mono font-bold">210°</span>
+          </div>
+          <input type="range" id="solid-hue-input" min="0" max="360" value="210" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+        </div>
+
+        <!-- Saturation -->
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs">
+            <span class="text-slate-300 font-medium">Saturation</span>
+            <span id="solid-sat-val" class="text-indigo-400 font-mono font-bold">50%</span>
+          </div>
+          <input type="range" id="solid-sat-input" min="0" max="100" value="50" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+        </div>
+
+        <!-- Lightness -->
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs">
+            <span class="text-slate-300 font-medium">Lightness</span>
+            <span id="solid-light-val" class="text-indigo-400 font-mono font-bold">50%</span>
+          </div>
+          <input type="range" id="solid-light-input" min="0" max="100" value="50" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+        </div>
+
+        <div class="flex items-center justify-center py-3 bg-slate-950/60 border border-slate-800 rounded-lg">
+          <div id="solid-preview-swatch" class="w-16 h-16 rounded-lg border border-slate-700 shadow-inner" style="background-color: hsl(210deg 50% 50%);"></div>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button id="btn-confirm-solid" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2.5 rounded-lg transition">
+          Add Layer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layer Filter Modal -->
+  <div id="layer-filter-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 w-96 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-semibold text-white flex items-center gap-2">
+          <i data-lucide="function-square" class="w-5 h-5 text-indigo-400"></i> Apply Math Function Filter
+        </h3>
+        <button id="btn-close-layer-filter" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Mathematical Transformation</label>
+          <select id="layer-math-filter-select" class="w-full bg-slate-800 text-slate-200 border border-slate-700 text-xs rounded-lg px-3 py-2 outline-none focus:border-indigo-500 transition">
+            <option value="multiply">Self-Blend: Multiply</option>
+            <option value="screen">Self-Blend: Screen</option>
+            <option value="overlay">Self-Blend: Overlay</option>
+            <option value="color-dodge">Self-Blend: Color Dodge</option>
+            <option value="color-burn">Self-Blend: Color Burn</option>
+            <option value="soft-light">Self-Blend: Soft Light</option>
+            <option value="invert">Invert Colors (1-x)</option>
+            <option value="sin">Sine Wave (|sin(2πx)|)</option>
+            <option value="cos">Cosine Wave (|cos(2πx)|)</option>
+            <option value="solarize">Solarization (1-|2x-1|)</option>
+          </select>
+        </div>
+
+        <p class="text-[11px] text-slate-400">Applies a permanent effect onto the layer's image pixels.</p>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button id="btn-confirm-layer-filter" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2.5 rounded-lg transition">
+          Apply Math Operation
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/index.js"></script>
+</body>
+</html>
