@@ -162,6 +162,9 @@ export function mergeActiveLayerDown() {
 
   const image = new Image();
   image.onload = () => {
+    const currentIndex = state.layers.indexOf(active);
+    if (currentIndex <= 0 || state.layers[currentIndex - 1] !== below) return;
+
     const merged = {
       id: createLayerId(),
       name: `${below.name} + ${active.name}`,
@@ -178,13 +181,13 @@ export function mergeActiveLayerDown() {
       filters: defaultFilters(),
     };
 
-    state.layers.splice(index - 1, 2, merged);
+    state.layers.splice(currentIndex - 1, 2, merged);
     state.activeLayerId = merged.id;
 
     updateUI();
     render();
-    image.src = canvas.toDataURL("image/png");
   };
+  image.src = canvas.toDataURL("image/png");
 }
 
 export function resetActiveTransform() {
@@ -256,6 +259,7 @@ export function applyMathFunctionFilter(filterKey) {
 
   const filtered = new Image();
   filtered.onload = () => {
+    if (!state.layers.includes(layer)) return;
     layer.img = filtered;
     layer.name += ` (${filterKey})`;
     updateUI();

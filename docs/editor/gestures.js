@@ -40,8 +40,6 @@ function hit(pos, layer) {
 }
 
 function begin(event) {
-  if (!state.layers.length) return;
-  const pos = pointer(event);
   if (state.activeTool === "pan") {
     state.isPanning = true;
     state.panStart = {
@@ -51,8 +49,11 @@ function begin(event) {
     return;
   }
 
+  if (!state.layers.length) return;
+  const pos = pointer(event);
+
   let layer = getActiveLayer(),
-    type = hit(pos, layer);
+    type = layer?.visible && !layer.locked ? hit(pos, layer) : null;
   if (!type)
     for (let i = state.layers.length - 1; i >= 0; i--) {
       const candidate = state.layers[i];
@@ -68,6 +69,7 @@ function begin(event) {
   if (!type || !layer) return;
 
   state.dragState = {
+    layer,
     type,
     startX: pos.x,
     startY: pos.y,
@@ -91,22 +93,25 @@ function move(event) {
 
   if (!state.dragState) return;
 
-  const layer = getActiveLayer();
-  if (!layer) return;
+  const drag = state.dragState;
+  const layer = drag.layer;
+  if (!state.layers.includes(layer)) return;
 
-  const pos = pointer(event),
-    drag = state.dragState;
+  const pos = pointer(event);
 
   if (drag.type === "move") {
     layer.x = drag.initialX + pos.x - drag.startX;
     layer.y = drag.initialY + pos.y - drag.startY;
   } else if (drag.type === "rotate") {
-    layer.rotation = Math.round(
-      ((Math.atan2(pos.y - drag.centerY, pos.x - drag.centerX) * 180) /
-        Math.PI +
-        90) %
-        360,
-    );
+    layer.rotation =
+      (Math.round(
+        ((Math.atan2(pos.y - drag.centerY, pos.x - drag.centerX) * 180) /
+          Math.PI +
+          90) %
+          360,
+      ) +
+        360) %
+      360;
   } else {
     const dx = pos.x - drag.startX,
       dy = pos.y - drag.startY;
@@ -120,8 +125,10 @@ function move(event) {
       drag.initialH +
         (drag.type.includes("s") ? dy : drag.type.includes("n") ? -dy : 0),
     );
-    if (drag.type.includes("w")) layer.x = drag.initialX + dx;
-    if (drag.type.includes("n")) layer.y = drag.initialY + dy;
+    if (drag.type.includes("w"))
+      layer.x = drag.initialX + drag.initialW - layer.width;
+    if (drag.type.includes("n"))
+      layer.y = drag.initialY + drag.initialH - layer.height;
   }
 
   updateLayerSizeInputs();

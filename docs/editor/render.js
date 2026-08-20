@@ -58,6 +58,7 @@ export function drawLayerToContext(target, layer) {
 
     offCtx.putImageData(data, 0, 0);
     image = off;
+    target.filter = "none";
   } else target.filter = cssFilter(f);
 
   target.translate(layer.x + layer.width / 2, layer.y + layer.height / 2);
@@ -80,7 +81,13 @@ export const cssFilter = (f) =>
 
 function drawHandles() {
   const layer = getActiveLayer();
-  if (!layer || !layer.visible || state.activeTool !== "move") return;
+  if (
+    !layer ||
+    !layer.visible ||
+    layer.locked ||
+    state.activeTool !== "move"
+  )
+    return;
   ctx.save();
   ctx.translate(layer.x + layer.width / 2, layer.y + layer.height / 2);
   if (layer.rotation) ctx.rotate((layer.rotation * Math.PI) / 180);

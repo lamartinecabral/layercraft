@@ -2,6 +2,19 @@ import { dom, getActiveLayer, state } from "./state.js";
 import { render } from "./render.js";
 import { value } from "./utils.js";
 
+const escapeHtml = (text) =>
+  String(text).replace(
+    /[&<>'"]/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;",
+      })[character],
+  );
+
 export function updateLayerSizeInputs() {
   const layer = getActiveLayer();
   if (layer) {
@@ -28,7 +41,7 @@ export function updateUI() {
         <div class="w-8 h-8 rounded bg-slate-900 border border-slate-700/80 flex items-center justify-center overflow-hidden shrink-0">
           <img src="${layer.img.src}" class="w-full h-full object-cover">
         </div>
-        <span class="layer-name-span font-medium truncate flex-1">${layer.name}</span>
+        <span class="layer-name-span font-medium truncate flex-1">${escapeHtml(layer.name)}</span>
         <button class="btn-rename opacity-0 group-hover/layer:opacity-100 transition p-1 text-slate-400 hover:text-white rounded">
           <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
         </button>
@@ -66,7 +79,8 @@ export function updateUI() {
         };
         input.addEventListener("blur", finish);
         input.addEventListener("keydown", (event) => {
-          if (event.key === "Enter" || event.key === "Escape") finish();
+          if (event.key === "Enter") finish();
+          if (event.key === "Escape") updateUI();
         });
       });
 

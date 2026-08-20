@@ -56,15 +56,32 @@ export function setupEvents() {
   on("empty-add-btn", "click", () => dom.fileInput.click());
 
   dom.fileInput.addEventListener("change", (event) => {
-    Array.from(event.target.files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (result) => {
-        const image = new Image();
-        image.onload = () => addImageLayer(image, file.name.split(".")[0]);
-        image.src = result.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
+    const files = Array.from(event.target.files);
+    const loadImage = (file) =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (result) => {
+          const image = new Image();
+          image.onload = () => {
+            addImageLayer(image, file.name.replace(/\.[^.]*$/, ""));
+            resolve();
+          };
+          image.onerror = reject;
+          image.src = result.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+    files.reduce(
+      (chain, file) =>
+        chain.then(() =>
+          loadImage(file).catch((error) =>
+            console.error(`Failed to load image "${file.name}"`, error),
+          ),
+        ),
+      Promise.resolve(),
+    );
     dom.fileInput.value = "";
   });
 

@@ -7,10 +7,13 @@ export function applyViewportTransform() {
 }
 
 export function fitCanvasToScreen() {
-  state.zoom = Math.min(
-    (dom.viewport.clientWidth - 80) / state.canvasWidth,
-    (dom.viewport.clientHeight - 80) / state.canvasHeight,
-    1,
+  state.zoom = Math.max(
+    0.1,
+    Math.min(
+      (dom.viewport.clientWidth - 80) / state.canvasWidth,
+      (dom.viewport.clientHeight - 80) / state.canvasHeight,
+      1,
+    ),
   );
   state.panX = 0;
   state.panY = 0;
