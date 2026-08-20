@@ -19,6 +19,19 @@ export const value = (id, text) => {
   getElem(null, id).textContent = text;
 };
 
+export const escapeHtml = (text) =>
+  String(text).replace(
+    /[&<>'"]/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;",
+      })[character],
+  );
+
 export const on = (id, event, handler) =>
   getElem(null, id).addEventListener(event, handler);
 

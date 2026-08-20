@@ -1,19 +1,6 @@
 import { dom, getActiveLayer, state } from "./state.js";
 import { render } from "./render.js";
-import { value } from "./utils.js";
-
-const escapeHtml = (text) =>
-  String(text).replace(
-    /[&<>'"]/g,
-    (character) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        "'": "&#39;",
-        '"': "&quot;",
-      })[character],
-  );
+import { escapeHtml, value } from "./utils.js";
 
 export function updateLayerSizeInputs() {
   const layer = getActiveLayer();
