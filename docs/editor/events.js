@@ -34,6 +34,31 @@ function bindFilter(key, display, suffix, float = false) {
   });
 }
 
+function readImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (result) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = reject;
+      image.src = result.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function addImageFiles(files) {
+  for (const file of files) {
+    try {
+      const image = await readImageFile(file);
+      addImageLayer(image, file.name.replace(/\.[^.]*$/, ""));
+    } catch (error) {
+      console.error(`Failed to load image "${file.name}"`, error);
+    }
+  }
+}
+
 export function setupEvents() {
   const menu = document.getElementById("add-layer-menu");
   const dropdown = document.getElementById("btn-add-layer-dropdown");
@@ -56,33 +81,7 @@ export function setupEvents() {
   on("empty-add-btn", "click", () => dom.fileInput.click());
 
   dom.fileInput.addEventListener("change", (event) => {
-    const files = Array.from(event.target.files);
-    const loadImage = (file) =>
-      new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (result) => {
-          const image = new Image();
-          image.onload = () => {
-            addImageLayer(image, file.name.replace(/\.[^.]*$/, ""));
-            resolve();
-          };
-          image.onerror = reject;
-          image.src = result.target.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-    const loadFiles = async () => {
-      for (const file of files) {
-        try {
-          await loadImage(file);
-        } catch (error) {
-          console.error(`Failed to load image "${file.name}"`, error);
-        }
-      }
-    };
-    loadFiles();
+    addImageFiles(Array.from(event.target.files));
     dom.fileInput.value = "";
   });
 
@@ -92,63 +91,14 @@ export function setupEvents() {
   on("btn-merge-layer", "click", mergeActiveLayerDown);
   on("btn-delete-layer", "click", deleteActiveLayer);
 
-  dom.opacity.addEventListener("input", (event) => {
-    const layer = getActiveLayer();
-    if (layer) {
-      layer.opacity = parseInt(event.target.value, 10);
-      dom.opacityValue.textContent = `${layer.opacity}%`;
-      updateUI();
-      render();
-    }
-  });
+  bindLayerControls();
+  bindViewportControls();
+  bindPanelControls();
+  bindToolControls();
+  bindModals();
+}
 
-  dom.blendMode.addEventListener("change", (event) => {
-    const layer = getActiveLayer();
-    if (layer) {
-      layer.blendMode = event.target.value;
-      render();
-    }
-  });
-
-  for (const [key, display, suffix] of [
-    ["brightness", "brightness-val", "%"],
-    ["contrast", "contrast-val", "%"],
-    ["saturate", "saturate-val", "%"],
-    ["hue", "hue-val", "°"],
-    ["blur", "blur-val", "px"],
-  ]) {
-    bindFilter(key, display, suffix);
-  }
-
-  bindFilter("gamma", "gamma-val", "", true);
-  bindFilter("sCurve", "scurve-val", "", true);
-
-  for (const [key, input] of [
-    ["width", dom.layerWidth],
-    ["height", dom.layerHeight],
-  ]) {
-    input.addEventListener("input", (event) => {
-      const layer = getActiveLayer(),
-        amount = Number(event.target.value);
-      if (!layer || !Number.isFinite(amount) || amount < 20) return;
-      const axis = key === "width" ? "x" : "y",
-        center = layer[axis] + layer[key] / 2;
-      layer[key] = Math.round(amount);
-      layer[axis] = center - layer[key] / 2;
-      render();
-    });
-  }
-
-  on("btn-reset-filters", "click", () => {
-    const layer = getActiveLayer();
-    if (layer) {
-      layer.filters = defaultFilters();
-      updateUI();
-      render();
-    }
-  });
-
-  on("btn-reset-transform", "click", resetActiveTransform);
+function bindViewportControls() {
   on("btn-zoom-in", "click", () => {
     state.zoom = Math.min(3, Math.round(state.zoom * 8 + 1) / 8);
     applyViewportTransform();
@@ -168,8 +118,8 @@ export function setupEvents() {
 
   dom.canvasSizeForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    const width = Number(dom.canvasWidth.value),
-      height = Number(dom.canvasHeight.value);
+    const width = Number(dom.canvasWidth.value);
+    const height = Number(dom.canvasHeight.value);
     if (
       !Number.isInteger(width) ||
       !Number.isInteger(height) ||
@@ -181,12 +131,15 @@ export function setupEvents() {
       dom.canvasSizeError.classList.remove("hidden");
       return;
     }
+
     initCanvasDimensions(width, height);
     hide("canvas-size-modal");
     fitCanvasToScreen();
     render();
   });
+}
 
+function bindPanelControls() {
   on("btn-clear-all", "click", () => {
     state.layers = [];
     state.activeLayerId = null;
@@ -194,8 +147,9 @@ export function setupEvents() {
     render();
   });
 
+  const sidebar = document.getElementById("right-sidebar");
   on("btn-toggle-sidebar", "click", () =>
-    document.getElementById("right-sidebar").classList.toggle("hidden"),
+    sidebar.classList.toggle("hidden"),
   );
   on("btn-close-sidebar", "click", () => hide("right-sidebar"));
 
@@ -216,7 +170,9 @@ export function setupEvents() {
     layersContent.classList.add("hidden");
     swapClasses(layersTab, adjustmentsTab);
   });
+}
 
+function bindToolControls() {
   const moveTool = document.getElementById("tool-move");
   const panTool = document.getElementById("tool-pan");
 
@@ -234,7 +190,67 @@ export function setupEvents() {
     dom.viewport.style.cursor = "grab";
     render();
   });
-  bindModals();
+}
+
+function bindLayerControls() {
+  dom.opacity.addEventListener("input", (event) => {
+    const layer = getActiveLayer();
+    if (!layer) return;
+
+    layer.opacity = parseInt(event.target.value, 10);
+    dom.opacityValue.textContent = `${layer.opacity}%`;
+    updateUI();
+    render();
+  });
+
+  dom.blendMode.addEventListener("change", (event) => {
+    const layer = getActiveLayer();
+    if (!layer) return;
+
+    layer.blendMode = event.target.value;
+    render();
+  });
+
+  for (const [key, display, suffix] of [
+    ["brightness", "brightness-val", "%"],
+    ["contrast", "contrast-val", "%"],
+    ["saturate", "saturate-val", "%"],
+    ["hue", "hue-val", "°"],
+    ["blur", "blur-val", "px"],
+  ]) {
+    bindFilter(key, display, suffix);
+  }
+
+  bindFilter("gamma", "gamma-val", "", true);
+  bindFilter("sCurve", "scurve-val", "", true);
+
+  for (const [key, input] of [
+    ["width", dom.layerWidth],
+    ["height", dom.layerHeight],
+  ]) {
+    input.addEventListener("input", (event) => {
+      const layer = getActiveLayer();
+      const amount = Number(event.target.value);
+      if (!layer || !Number.isFinite(amount) || amount < 20) return;
+
+      const axis = key === "width" ? "x" : "y";
+      const center = layer[axis] + layer[key] / 2;
+      layer[key] = Math.round(amount);
+      layer[axis] = center - layer[key] / 2;
+      render();
+    });
+  }
+
+  on("btn-reset-filters", "click", () => {
+    const layer = getActiveLayer();
+    if (!layer) return;
+
+    layer.filters = defaultFilters();
+    updateUI();
+    render();
+  });
+
+  on("btn-reset-transform", "click", resetActiveTransform);
 }
 
 function bindModals() {

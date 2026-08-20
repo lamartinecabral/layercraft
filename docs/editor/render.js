@@ -38,6 +38,31 @@ const transforms = {
   ),
 };
 
+function createPixelFilteredImage(layer) {
+  const f = layer.filters;
+  const canvas = document.createElement("canvas");
+  canvas.width = layer.width;
+  canvas.height = layer.height;
+  const context = canvas.getContext("2d");
+  context.filter = cssFilter(f);
+  context.drawImage(layer.img, 0, 0, layer.width, layer.height);
+
+  const data = context.getImageData(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < data.data.length; i += 4) {
+    if (!data.data[i + 3]) continue;
+
+    for (let channel = 0; channel < 3; channel++) {
+      let value = data.data[i + channel];
+      if (f.gamma) value = transforms.gamma(value, f.gamma);
+      if (f.sCurve) value = transforms.sCurve(value, f.sCurve);
+      data.data[i + channel] = value;
+    }
+  }
+
+  context.putImageData(data, 0, 0);
+  return canvas;
+}
+
 export function drawLayerToContext(target, layer) {
   if (!layer.visible) return;
 
@@ -47,33 +72,8 @@ export function drawLayerToContext(target, layer) {
 
   const f = layer.filters;
   const needsPixels = f.gamma !== 0 || f.sCurve !== 0;
-
-  let image = layer.img;
-
-  if (needsPixels) {
-    const off = document.createElement("canvas");
-    off.width = layer.width;
-    off.height = layer.height;
-    const offCtx = off.getContext("2d");
-    offCtx.filter = cssFilter(f);
-    offCtx.drawImage(image, 0, 0, layer.width, layer.height);
-    const data = offCtx.getImageData(0, 0, off.width, off.height);
-
-    for (let i = 0; i < data.data.length; i += 4) {
-      if (!data.data[i + 3]) continue;
-
-      for (let c = 0; c < 3; c++) {
-        let value = data.data[i + c];
-        if (f.gamma) value = transforms.gamma(value, f.gamma);
-        if (f.sCurve) value = transforms.sCurve(value, f.sCurve);
-        data.data[i + c] = value;
-      }
-    }
-
-    offCtx.putImageData(data, 0, 0);
-    image = off;
-    target.filter = "none";
-  } else target.filter = cssFilter(f);
+  const image = needsPixels ? createPixelFilteredImage(layer) : layer.img;
+  target.filter = needsPixels ? "none" : cssFilter(f);
 
   target.translate(layer.x + layer.width / 2, layer.y + layer.height / 2);
 

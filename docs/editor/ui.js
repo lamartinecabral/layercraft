@@ -23,9 +23,7 @@ export function updateLayerSizeInputs() {
   }
 }
 
-export function updateUI() {
-  const active = getActiveLayer();
-
+function renderLayerList() {
   dom.layersList.innerHTML = "";
 
   state.layers
@@ -94,6 +92,12 @@ export function updateUI() {
 
       dom.layersList.appendChild(item);
     });
+}
+
+export function updateUI() {
+  const active = getActiveLayer();
+
+  renderLayerList();
 
   const merge = document.getElementById("btn-merge-layer");
 

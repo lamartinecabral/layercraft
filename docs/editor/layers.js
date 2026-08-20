@@ -15,7 +15,21 @@ const pixelTransforms = {
   sin: (value) => Math.abs(Math.sin(value * 2 * Math.PI)),
   cos: (value) => Math.abs(Math.cos(value * 2 * Math.PI)),
   solarize: (value) => 1 - Math.abs(2 * value - 1),
+  sqrt: (value) => Math.sqrt(value),
+  dualsqrt: (value) => 1 - Math.sqrt(1 - value),
+  ogamma: (value) =>
+    value < 0.5 ? Math.sqrt(value * 2) / 2 : 1 - Math.sqrt(2 - value * 2) / 2,
 };
+
+const compositeFilters = new Set([
+  "multiply",
+  "screen",
+  "overlay",
+  "color-dodge",
+  "color-burn",
+  "soft-light",
+  "exclusion",
+]);
 
 export function addImageLayer(img, name = null) {
   if (!state.layers.length) {
@@ -197,42 +211,37 @@ export function resetActiveTransform() {
   render();
 }
 
-export function applyMathFunctionFilter(filterKey) {
-  const layer = getActiveLayer();
-  if (!layer) return;
+function createLayerCanvas(layer) {
+  const canvas = document.createElement("canvas");
+  canvas.width = layer.width;
+  canvas.height = layer.height;
+  const context = canvas.getContext("2d");
+  context.drawImage(layer.img, 0, 0, layer.width, layer.height);
+  return { canvas, context };
+}
 
-  const source = document.createElement("canvas");
-  source.width = layer.width;
-  source.height = layer.height;
-  const sourceCtx = source.getContext("2d");
-  sourceCtx.drawImage(layer.img, 0, 0, layer.width, layer.height);
+function applyCompositeFilter(context, layer, filterKey) {
+  context.globalCompositeOperation = filterKey;
+  context.drawImage(layer.img, 0, 0, layer.width, layer.height);
+}
 
-  if (
-    [
-      "multiply",
-      "screen",
-      "overlay",
-      "color-dodge",
-      "color-burn",
-      "soft-light",
-      "exclusion",
-    ].includes(filterKey)
-  ) {
-    sourceCtx.globalCompositeOperation = filterKey;
-    sourceCtx.drawImage(layer.img, 0, 0, layer.width, layer.height);
-  } else {
-    const data = sourceCtx.getImageData(0, 0, source.width, source.height);
-    const transform = pixelTransforms[filterKey];
-    for (let i = 0; i < data.data.length; i += 4) {
-      if (!data.data[i + 3] || !transform) continue;
-      for (let c = 0; c < 3; c++) {
-        data.data[i + c] = Math.round(255 * transform(data.data[i + c] / 255));
-      }
+function applyPixelFilter(context, canvas, filterKey) {
+  const data = context.getImageData(0, 0, canvas.width, canvas.height);
+  const transform = pixelTransforms[filterKey];
+
+  for (let i = 0; i < data.data.length; i += 4) {
+    if (!data.data[i + 3] || !transform) continue;
+    for (let channel = 0; channel < 3; channel++) {
+      data.data[i + channel] = Math.round(
+        255 * transform(data.data[i + channel] / 255),
+      );
     }
-
-    sourceCtx.putImageData(data, 0, 0);
   }
 
+  context.putImageData(data, 0, 0);
+}
+
+function commitFilteredImage(layer, filterKey, source) {
   const filtered = new Image();
   filtered.onload = () => {
     if (!state.layers.includes(layer)) return;
@@ -242,4 +251,18 @@ export function applyMathFunctionFilter(filterKey) {
     render();
   };
   filtered.src = source.toDataURL("image/png");
+}
+
+export function applyMathFunctionFilter(filterKey) {
+  const layer = getActiveLayer();
+  if (!layer) return;
+
+  const { canvas, context } = createLayerCanvas(layer);
+  if (compositeFilters.has(filterKey)) {
+    applyCompositeFilter(context, layer, filterKey);
+  } else {
+    applyPixelFilter(context, canvas, filterKey);
+  }
+
+  commitFilteredImage(layer, filterKey, canvas);
 }
