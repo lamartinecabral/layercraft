@@ -96,6 +96,11 @@ export function updateUI() {
   merge.classList.toggle("opacity-40", merge.disabled);
   merge.classList.toggle("cursor-not-allowed", merge.disabled);
 
+  const mergeAll = document.getElementById("btn-merge-all");
+  mergeAll.disabled = state.layers.filter((layer) => layer.visible).length < 2;
+  mergeAll.classList.toggle("opacity-40", mergeAll.disabled);
+  mergeAll.classList.toggle("cursor-not-allowed", mergeAll.disabled);
+
   if (window.lucide) lucide.createIcons();
 
   if (!active) {

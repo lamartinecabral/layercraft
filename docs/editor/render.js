@@ -63,12 +63,15 @@ function createPixelFilteredImage(layer) {
   return canvas;
 }
 
-export function drawLayerToContext(target, layer) {
+export function drawLayerToContext(target, layer, { ignoreBlendMode = false } = {}) {
   if (!layer.visible) return;
 
   target.save();
   target.globalAlpha = layer.opacity / 100;
-  target.globalCompositeOperation = layer.blendMode || "source-over";
+  // Statistical merges intentionally render every layer with normal compositing.
+  target.globalCompositeOperation = ignoreBlendMode
+    ? "source-over"
+    : layer.blendMode || "source-over";
 
   const f = layer.filters;
   const needsPixels = f.gamma !== 0 || f.sCurve !== 0;

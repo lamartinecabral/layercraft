@@ -12,6 +12,7 @@ import {
   deleteActiveLayer,
   duplicateActiveLayer,
   mergeActiveLayerDown,
+  mergeAllLayers,
   moveLayerOrder,
   resetActiveTransform,
 } from "./layers.js";
@@ -89,6 +90,10 @@ export function setupEvents() {
   on("btn-layer-down", "click", () => moveLayerOrder("down"));
   on("btn-duplicate-layer", "click", duplicateActiveLayer);
   on("btn-merge-layer", "click", mergeActiveLayerDown);
+  on("btn-merge-all", "click", () => {
+    if (state.layers.length > 1)
+      document.getElementById("merge-all-modal").classList.remove("hidden");
+  });
   on("btn-delete-layer", "click", deleteActiveLayer);
 
   bindLayerControls();
@@ -304,6 +309,11 @@ function bindModals() {
   on("btn-confirm-solid", "click", () => {
     addSolidLayer(+hue.value, +sat.value, +light.value);
     hide("solid-layer-modal");
+  });
+  on("btn-close-merge-all", "click", () => hide("merge-all-modal"));
+  on("btn-confirm-merge-all", "click", () => {
+    mergeAllLayers(document.getElementById("merge-all-method").value);
+    hide("merge-all-modal");
   });
   const filterModal = document.getElementById("layer-filter-modal");
   on("btn-layer-filter-modal", "click", () => {

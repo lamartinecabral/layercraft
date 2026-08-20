@@ -151,6 +151,112 @@ export function moveLayerOrder(direction) {
   render();
 }
 
+const mergeMethods = new Set([
+  "average",
+  "max",
+  "min",
+  "median",
+  "geometric-mean",
+  "dual-geometric-mean",
+]);
+
+function aggregate(values, method) {
+  if (method === "max") return Math.max(...values);
+  if (method === "min") return Math.min(...values);
+  if (method === "median") {
+    const sorted = values.slice().sort((a, b) => a - b);
+    const middle = Math.floor(sorted.length / 2);
+    return sorted.length % 2
+      ? sorted[middle]
+      : (sorted[middle - 1] + sorted[middle]) / 2;
+  }
+  if (method === "geometric-mean") {
+    // Work in normalized color space to avoid overflowing the product.
+    const product = values.reduce(
+      (result, value) => result * (value / 255),
+      1,
+    );
+    return 255 * product ** (1 / values.length);
+  }
+  if (method === "dual-geometric-mean") {
+    // The complement of the geometric mean of the complements.
+    const product = values.reduce(
+      (result, value) => 1 - (1 - result) * (1 - value / 255),
+      0,
+    );
+    return 255 * (1 - (1 - product) ** (1 / values.length));
+  }
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+/** Merge every visible layer by aggregating its rendered pixel values. */
+export function mergeAllLayers(method = "average") {
+  const visibleLayers = state.layers.filter((layer) => layer.visible);
+  if (visibleLayers.length < 2 || !mergeMethods.has(method)) return;
+
+  const canvases = visibleLayers.map((layer) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = state.canvasWidth;
+    canvas.height = state.canvasHeight;
+    const context = canvas.getContext("2d");
+    drawLayerToContext(context, layer, { ignoreBlendMode: true });
+    return context.getImageData(0, 0, canvas.width, canvas.height).data;
+  });
+  const output = new ImageData(state.canvasWidth, state.canvasHeight);
+
+  for (let pixel = 0; pixel < output.data.length; pixel += 4) {
+    const samples = [[], [], [], []];
+    for (const data of canvases) {
+      // Transparent pixels are not color samples. This also keeps a layer
+      // outside the canvas from pulling the result toward black.
+      if (!data[pixel + 3]) continue;
+      for (let channel = 0; channel < 4; channel++)
+        samples[channel].push(data[pixel + channel]);
+    }
+    if (!samples[3].length) continue;
+    for (let channel = 0; channel < 4; channel++)
+      output.data[pixel + channel] = Math.round(
+        aggregate(samples[channel], method),
+      );
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = state.canvasWidth;
+  canvas.height = state.canvasHeight;
+  canvas.getContext("2d").putImageData(output, 0, 0);
+  const image = new Image();
+  image.onload = () => {
+    const merged = createLayer({
+      name: `Merged (${method})`,
+      img: image,
+      x: 0,
+      y: 0,
+      width: state.canvasWidth,
+      height: state.canvasHeight,
+    });
+    // Keep hidden layers in their existing order. Place the merged layer where
+    // the uppermost visible layer was, so hidden layers are never rendered as
+    // part of the aggregate and remain independently editable.
+    const topVisibleIndex = state.layers.reduce(
+      (index, layer, currentIndex) =>
+        layer.visible ? currentIndex : index,
+      -1,
+    );
+    state.layers = state.layers.reduce((layers, layer, index) => {
+      if (layer.visible) {
+        if (index === topVisibleIndex) layers.push(merged);
+      } else {
+        layers.push(layer);
+      }
+      return layers;
+    }, []);
+    state.activeLayerId = merged.id;
+    updateUI();
+    render();
+  };
+  image.src = canvas.toDataURL("image/png");
+}
+
 export function mergeActiveLayerDown() {
   const index = state.layers.findIndex(
     (layer) => layer.id === state.activeLayerId,
