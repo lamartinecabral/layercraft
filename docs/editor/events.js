@@ -15,7 +15,7 @@ import {
   mergeAllLayers,
   moveLayerOrder,
   resetActiveTransform,
-} from "./layers.js";
+} from "./layers/index.js";
 import { drawLayerToContext, render } from "./render.js";
 import { applyViewportTransform, fitCanvasToScreen } from "./viewport.js";
 import { updateUI } from "./ui.js";
