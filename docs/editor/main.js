@@ -1,4 +1,4 @@
-import { setupEvents } from "./events.js";
+import { setupEvents } from "./events/index.js";
 import { setupGestures } from "./gestures.js";
 import { fitCanvasToScreen, setupViewport } from "./viewport.js";
 import { render } from "./render.js";
