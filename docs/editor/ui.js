@@ -73,14 +73,22 @@ export function updateUI() {
         item.querySelector(".layer-name-span").replaceWith(input);
         input.focus();
         input.select();
+        let editingFinished = false;
         const finish = () => {
+          if (editingFinished) return;
+          editingFinished = true;
           if (input.value.trim()) layer.name = input.value.trim();
+          updateUI();
+        };
+        const cancel = () => {
+          if (editingFinished) return;
+          editingFinished = true;
           updateUI();
         };
         input.addEventListener("blur", finish);
         input.addEventListener("keydown", (event) => {
           if (event.key === "Enter") finish();
-          if (event.key === "Escape") updateUI();
+          if (event.key === "Escape") cancel();
         });
       });
 

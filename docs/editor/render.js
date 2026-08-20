@@ -1,15 +1,27 @@
 import { ctx, dom, getActiveLayer, state } from "./state.js";
 
-function transformTable(fn) {
-  const table = Array.from({ length: 256 }, () => []);
+const COLOR_VALUE_COUNT = 256;
+const FILTER_STEP_COUNT = 100;
+const FILTER_STEP_SCALE = 10;
+const FILTER_RANGE = 5;
 
-  for (let source = 0; source < 256; source++)
-    for (let step = 0; step <= 100; step++)
+function transformTable(fn) {
+  const table = Array.from({ length: COLOR_VALUE_COUNT }, () => []);
+
+  for (let source = 0; source < COLOR_VALUE_COUNT; source++)
+    for (let step = 0; step <= FILTER_STEP_COUNT; step++)
       table[source][step] = Math.round(
-        255 * fn(source / 255, +(step / 10 - 5).toFixed(1)),
+        (COLOR_VALUE_COUNT - 1) *
+          fn(
+            source / (COLOR_VALUE_COUNT - 1),
+            +(step / FILTER_STEP_SCALE - FILTER_RANGE).toFixed(1),
+          ),
       );
 
-  return (source, value) => table[source][Math.round(value * 10 + 50)];
+  return (source, value) =>
+    table[source][
+      Math.round(value * FILTER_STEP_SCALE + FILTER_RANGE * FILTER_STEP_SCALE)
+    ];
 }
 
 const transforms = {
@@ -77,16 +89,17 @@ export function drawLayerToContext(target, layer) {
 }
 
 export const cssFilter = (f) =>
-  `brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) hue-rotate(${f.hue}deg) blur(${f.blur}px)`;
+  [
+    `brightness(${f.brightness}%)`,
+    `contrast(${f.contrast}%)`,
+    `saturate(${f.saturate}%)`,
+    `hue-rotate(${f.hue}deg)`,
+    `blur(${f.blur}px)`,
+  ].join(" ");
 
 function drawHandles() {
   const layer = getActiveLayer();
-  if (
-    !layer ||
-    !layer.visible ||
-    layer.locked ||
-    state.activeTool !== "move"
-  )
+  if (!layer || !layer.visible || layer.locked || state.activeTool !== "move")
     return;
   ctx.save();
   ctx.translate(layer.x + layer.width / 2, layer.y + layer.height / 2);

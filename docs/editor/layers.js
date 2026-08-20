@@ -111,10 +111,11 @@ export function duplicateActiveLayer() {
     : `${source.name} 2`;
 
   const layer = {
-    ...JSON.parse(JSON.stringify(source)),
+    ...source,
     id: createLayerId(),
     name,
     img: source.img,
+    filters: { ...source.filters },
   };
 
   state.layers.splice(index + 1, 0, layer);

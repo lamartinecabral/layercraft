@@ -1,11 +1,29 @@
 import { getElem } from "./utils.js";
 
+/**
+ * @typedef {Object} Layer
+ * @property {string} id
+ * @property {string} name
+ * @property {HTMLImageElement} img
+ * @property {number} x
+ * @property {number} y
+ * @property {number} width
+ * @property {number} height
+ * @property {number} rotation
+ * @property {number} opacity
+ * @property {string} blendMode
+ * @property {boolean} visible
+ * @property {boolean} locked
+ * @property {ReturnType<typeof defaultFilters>} filters
+ */
+
 export const state = {
   canvasWidth: 1080,
   canvasHeight: 1080,
   zoom: 1,
   panX: 0,
   panY: 0,
+  /** @type {Layer[]} */
   layers: [],
   activeLayerId: null,
   activeTool: "move",
@@ -59,7 +77,7 @@ export const getActiveLayer = () =>
   state.layers.find((layer) => layer.id === state.activeLayerId);
 
 export const createLayerId = () =>
-  `layer_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+  `layer_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
 export function initCanvasDimensions(width, height) {
   state.canvasWidth = width;

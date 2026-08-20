@@ -1,4 +1,11 @@
-/** @type {<T extends null | keyof HTMLElementTagNameMap>(tag: T, id: string) => null extends T ? HTMLElement : HTMLElementTagNameMap[T]} */
+/**
+ * @type {
+ *   <T extends null | keyof HTMLElementTagNameMap>(
+ *     tag: T,
+ *     id: string,
+ *   ) => null extends T ? HTMLElement : HTMLElementTagNameMap[T]
+ * }
+ */
 export const getElem = (tag, id) => {
   const elem = document.getElementById(id);
   if (!elem) throw new Error(`Element with id "${id}" not found`);
@@ -18,3 +25,9 @@ export const on = (id, event, handler) =>
 export const hide = (id) => getElem(null, id).classList.add("hidden");
 
 export const show = (id) => getElem(null, id).classList.remove("hidden");
+
+export function swapClasses(firstElement, secondElement) {
+  const firstClassName = firstElement.className;
+  firstElement.className = secondElement.className;
+  secondElement.className = firstClassName;
+}

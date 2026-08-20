@@ -18,7 +18,7 @@ import {
 import { drawLayerToContext, render } from "./render.js";
 import { applyViewportTransform, fitCanvasToScreen } from "./viewport.js";
 import { updateUI } from "./ui.js";
-import { hide, on } from "./utils.js";
+import { hide, on, swapClasses } from "./utils.js";
 
 function bindFilter(key, display, suffix, float = false) {
   dom.filters[key].addEventListener("input", (event) => {
@@ -35,8 +35,8 @@ function bindFilter(key, display, suffix, float = false) {
 }
 
 export function setupEvents() {
-  const menu = document.getElementById("add-layer-menu"),
-    dropdown = document.getElementById("btn-add-layer-dropdown");
+  const menu = document.getElementById("add-layer-menu");
+  const dropdown = document.getElementById("btn-add-layer-dropdown");
 
   dropdown.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -73,15 +73,16 @@ export function setupEvents() {
         reader.readAsDataURL(file);
       });
 
-    files.reduce(
-      (chain, file) =>
-        chain.then(() =>
-          loadImage(file).catch((error) =>
-            console.error(`Failed to load image "${file.name}"`, error),
-          ),
-        ),
-      Promise.resolve(),
-    );
+    const loadFiles = async () => {
+      for (const file of files) {
+        try {
+          await loadImage(file);
+        } catch (error) {
+          console.error(`Failed to load image "${file.name}"`, error);
+        }
+      }
+    };
+    loadFiles();
     dom.fileInput.value = "";
   });
 
@@ -204,48 +205,32 @@ export function setupEvents() {
   const adjustmentsContent = document.getElementById("tab-adjustments-content");
 
   layersTab.addEventListener("click", () => {
-    if (layersContent.classList.contains("hidden")) {
-      [layersTab.className, adjustmentsTab.className] = [
-        adjustmentsTab.className,
-        layersTab.className,
-      ];
-    }
+    if (!layersContent.classList.contains("hidden")) return;
     layersContent.classList.remove("hidden");
     adjustmentsContent.classList.add("hidden");
+    swapClasses(layersTab, adjustmentsTab);
   });
   adjustmentsTab.addEventListener("click", () => {
-    if (adjustmentsContent.classList.contains("hidden")) {
-      [layersTab.className, adjustmentsTab.className] = [
-        adjustmentsTab.className,
-        layersTab.className,
-      ];
-    }
+    if (!adjustmentsContent.classList.contains("hidden")) return;
     adjustmentsContent.classList.remove("hidden");
     layersContent.classList.add("hidden");
+    swapClasses(layersTab, adjustmentsTab);
   });
 
   const moveTool = document.getElementById("tool-move");
   const panTool = document.getElementById("tool-pan");
 
   moveTool.addEventListener("click", () => {
-    if (state.activeTool === "pan") {
-      [moveTool.className, panTool.className] = [
-        panTool.className,
-        moveTool.className,
-      ];
-    }
+    if (state.activeTool === "move") return;
     state.activeTool = "move";
+    swapClasses(moveTool, panTool);
     dom.viewport.style.cursor = "default";
     render();
   });
   panTool.addEventListener("click", () => {
-    if (state.activeTool === "move") {
-      [moveTool.className, panTool.className] = [
-        panTool.className,
-        moveTool.className,
-      ];
-    }
+    if (state.activeTool === "pan") return;
     state.activeTool = "pan";
+    swapClasses(moveTool, panTool);
     dom.viewport.style.cursor = "grab";
     render();
   });

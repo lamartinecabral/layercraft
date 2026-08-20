@@ -115,16 +115,15 @@ function move(event) {
   } else {
     const dx = pos.x - drag.startX,
       dy = pos.y - drag.startY;
-    layer.width = Math.max(
-      20,
-      drag.initialW +
-        (drag.type.includes("e") ? dx : drag.type.includes("w") ? -dx : 0),
-    );
-    layer.height = Math.max(
-      20,
-      drag.initialH +
-        (drag.type.includes("s") ? dy : drag.type.includes("n") ? -dy : 0),
-    );
+    let widthDelta = 0;
+    let heightDelta = 0;
+    if (drag.type.includes("e")) widthDelta = dx;
+    if (drag.type.includes("w")) widthDelta = -dx;
+    if (drag.type.includes("s")) heightDelta = dy;
+    if (drag.type.includes("n")) heightDelta = -dy;
+
+    layer.width = Math.max(20, drag.initialW + widthDelta);
+    layer.height = Math.max(20, drag.initialH + heightDelta);
     if (drag.type.includes("w"))
       layer.x = drag.initialX + drag.initialW - layer.width;
     if (drag.type.includes("n"))
