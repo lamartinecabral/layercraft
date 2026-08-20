@@ -8,8 +8,8 @@ const FILTER_RANGE = 5;
 function transformTable(fn) {
   const table = Array.from({ length: COLOR_VALUE_COUNT }, () => []);
 
-  for (let source = 0; source < COLOR_VALUE_COUNT; source++)
-    for (let step = 0; step <= FILTER_STEP_COUNT; step++)
+  for (let source = 0; source < COLOR_VALUE_COUNT; source++) {
+    for (let step = 0; step <= FILTER_STEP_COUNT; step++) {
       table[source][step] = Math.round(
         (COLOR_VALUE_COUNT - 1) *
           fn(
@@ -17,6 +17,8 @@ function transformTable(fn) {
             +(step / FILTER_STEP_SCALE - FILTER_RANGE).toFixed(1),
           ),
       );
+    }
+  }
 
   return (source, value) =>
     table[source][

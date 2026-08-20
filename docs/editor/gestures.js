@@ -34,8 +34,9 @@ function hit(pos, layer) {
     ["ne", w, -h],
     ["se", w, h],
     ["sw", -w, h],
-  ])
+  ]) {
     if (Math.hypot(dx - x, dy - y) <= threshold) return name;
+  }
   return dx >= -w && dx <= w && dy >= -h && dy <= h ? "move" : null;
 }
 

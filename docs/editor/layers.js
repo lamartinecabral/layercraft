@@ -1,4 +1,5 @@
 import {
+  createLayer,
   createLayerId,
   defaultFilters,
   getActiveLayer,
@@ -9,6 +10,13 @@ import { render, drawLayerToContext } from "./render.js";
 import { updateUI } from "./ui.js";
 import { fitCanvasToScreen } from "./viewport.js";
 
+const pixelTransforms = {
+  invert: (value) => 1 - value,
+  sin: (value) => Math.abs(Math.sin(value * 2 * Math.PI)),
+  cos: (value) => Math.abs(Math.cos(value * 2 * Math.PI)),
+  solarize: (value) => 1 - Math.abs(2 * value - 1),
+};
+
 export function addImageLayer(img, name = null) {
   if (!state.layers.length) {
     initCanvasDimensions(img.naturalWidth || 1080, img.naturalHeight || 1080);
@@ -17,21 +25,14 @@ export function addImageLayer(img, name = null) {
 
   const width = img.naturalWidth || 500;
   const height = img.naturalHeight || 500;
-  const layer = {
-    id: createLayerId(),
+  const layer = createLayer({
     name: name || `Layer ${state.nextLayerNum++}`,
     img,
     x: (state.canvasWidth - width) / 2,
     y: (state.canvasHeight - height) / 2,
     width,
     height,
-    rotation: 0,
-    opacity: 100,
-    blendMode: "source-over",
-    visible: true,
-    locked: false,
-    filters: defaultFilters(),
-  };
+  });
 
   state.layers.push(layer);
   state.activeLayerId = layer.id;
@@ -55,21 +56,14 @@ export function addSolidLayer(h, s, l) {
 
   const img = new Image();
   img.onload = () => {
-    const layer = {
-      id: createLayerId(),
+    const layer = createLayer({
       name: `Solid (${h}°, ${s}%, ${l}%)`,
       img,
       x: 0,
       y: 0,
       width: state.canvasWidth,
       height: state.canvasHeight,
-      rotation: 0,
-      opacity: 100,
-      blendMode: "source-over",
-      visible: true,
-      locked: false,
-      filters: defaultFilters(),
-    };
+    });
 
     state.layers.push(layer);
     state.activeLayerId = layer.id;
@@ -166,21 +160,14 @@ export function mergeActiveLayerDown() {
     const currentIndex = state.layers.indexOf(active);
     if (currentIndex <= 0 || state.layers[currentIndex - 1] !== below) return;
 
-    const merged = {
-      id: createLayerId(),
+    const merged = createLayer({
       name: `${below.name} + ${active.name}`,
       img: image,
       x: 0,
       y: 0,
       width: state.canvasWidth,
       height: state.canvasHeight,
-      rotation: 0,
-      opacity: 100,
-      blendMode: "source-over",
-      visible: true,
-      locked: false,
-      filters: defaultFilters(),
-    };
+    });
 
     state.layers.splice(currentIndex - 1, 2, merged);
     state.activeLayerId = merged.id;
@@ -235,23 +222,11 @@ export function applyMathFunctionFilter(filterKey) {
     sourceCtx.drawImage(layer.img, 0, 0, layer.width, layer.height);
   } else {
     const data = sourceCtx.getImageData(0, 0, source.width, source.height);
+    const transform = pixelTransforms[filterKey];
     for (let i = 0; i < data.data.length; i += 4) {
-      if (!data.data[i + 3]) continue;
+      if (!data.data[i + 3] || !transform) continue;
       for (let c = 0; c < 3; c++) {
-        const value = data.data[i + c];
-        if (filterKey === "invert") data.data[i + c] = 255 - value;
-        if (filterKey === "sin")
-          data.data[i + c] = Math.round(
-            255 * Math.abs(Math.sin((value * 2 * Math.PI) / 255)),
-          );
-        if (filterKey === "cos")
-          data.data[i + c] = Math.round(
-            255 * Math.abs(Math.cos((value * 2 * Math.PI) / 255)),
-          );
-        if (filterKey === "solarize")
-          data.data[i + c] = Math.round(
-            255 * (1 - Math.abs((2 * value) / 255 - 1)),
-          );
+        data.data[i + c] = Math.round(255 * transform(data.data[i + c] / 255));
       }
     }
 

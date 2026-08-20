@@ -73,6 +73,25 @@ export const defaultFilters = () => ({
   sCurve: 0,
 });
 
+/** @returns {Layer} */
+export const createLayer = ({ name, img, x, y, width, height }) => {
+  return {
+    id: createLayerId(),
+    name,
+    img,
+    x,
+    y,
+    width,
+    height,
+    rotation: 0,
+    opacity: 100,
+    blendMode: "source-over",
+    visible: true,
+    locked: false,
+    filters: defaultFilters(),
+  };
+};
+
 export const getActiveLayer = () =>
   state.layers.find((layer) => layer.id === state.activeLayerId);
 
