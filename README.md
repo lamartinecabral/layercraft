@@ -6,7 +6,6 @@ LayerCraft is a lightweight, browser-based image editor for creating simple comp
 
 ### Requirements
 
-- Python 3 (for the local server)
 - Node.js (for development scripts)
 - A modern browser
 
@@ -16,7 +15,7 @@ No npm dependencies are required. Start the local server with:
 npm start
 ```
 
-Then open [http://localhost:3000](http://localhost:3000).
+Then open [http://localhost:3005](http://localhost:3005).
 
 The command serves the `docs/` directory using Python's built-in HTTP server. Opening `docs/index.html` directly may prevent some browser features from working as expected because the app is designed to run over HTTP.
 
