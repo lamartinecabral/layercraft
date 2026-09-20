@@ -1,4 +1,4 @@
-export { addImageLayer, addSolidLayer } from "./add.js";
+export { addImageLayer, addShapeLayer, addSolidLayer } from "./add.js";
 export {
   deleteActiveLayer,
   duplicateActiveLayer,

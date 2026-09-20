@@ -1,4 +1,5 @@
 import { ctx, dom, getActiveLayer, state } from "./state.js";
+import { drawShape } from "./shapes.js";
 
 const COLOR_VALUE_COUNT = 256;
 const FILTER_STEP_COUNT = 100;
@@ -143,11 +144,32 @@ function drawHandles() {
 }
 
 export function render() {
-  dom.emptyState.classList.toggle("hidden", state.layers.length > 0);
+  dom.emptyState.classList.toggle(
+    "hidden",
+    state.layers.length > 0 || state.activeTool === "shape",
+  );
 
   ctx.clearRect(0, 0, dom.canvas.width, dom.canvas.height);
 
   state.layers.forEach((layer) => drawLayerToContext(ctx, layer));
+
+  if (state.shapePreview) {
+    const preview = state.shapePreview;
+    drawShape(
+      ctx,
+      preview.type,
+      preview.startX,
+      preview.startY,
+      preview.endX,
+      preview.endY,
+      {
+        color: preview.color,
+        filled: preview.filled,
+        lineWidth: preview.lineWidth,
+        preview: true,
+      },
+    );
+  }
 
   drawHandles();
 }

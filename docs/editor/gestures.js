@@ -1,4 +1,5 @@
 import { dom, getActiveLayer, state } from "./state.js";
+import { addShapeLayer } from "./layers/index.js";
 import { applyViewportTransform } from "./viewport.js";
 import { render } from "./render.js";
 import { updateLayerSizeInputs, updateUI } from "./ui.js";
@@ -50,8 +51,25 @@ function begin(event) {
     return;
   }
 
-  if (!state.layers.length) return;
   const pos = pointer(event);
+
+  if (state.activeTool === "shape") {
+    state.shapePreview = {
+      type: state.shapeType,
+      startX: pos.x,
+      startY: pos.y,
+      endX: pos.x,
+      endY: pos.y,
+      color: state.shapeColor,
+      filled: state.shapeFilled,
+      lineWidth: state.shapeLineWidth,
+    };
+    state.dragState = { type: "shape" };
+    render();
+    return;
+  }
+
+  if (!state.layers.length) return;
 
   let layer = getActiveLayer(),
     type = layer?.visible && !layer.locked ? hit(pos, layer) : null;
@@ -89,6 +107,14 @@ function move(event) {
     state.panX = event.clientX - state.panStart.x;
     state.panY = event.clientY - state.panStart.y;
     applyViewportTransform();
+    return;
+  }
+
+  if (state.shapePreview) {
+    const pos = pointer(event);
+    state.shapePreview.endX = pos.x;
+    state.shapePreview.endY = pos.y;
+    render();
     return;
   }
 
@@ -135,6 +161,43 @@ function move(event) {
   render();
 }
 
+function finishShape() {
+  const preview = state.shapePreview;
+  if (!preview) return;
+
+  state.shapePreview = null;
+  state.dragState = null;
+  const width = Math.abs(preview.endX - preview.startX);
+  const height = Math.abs(preview.endY - preview.startY);
+  const length = Math.hypot(
+    preview.endX - preview.startX,
+    preview.endY - preview.startY,
+  );
+  const valid = preview.type === "arrow" ? length >= 8 : width >= 8 && height >= 8;
+  if (valid) {
+    addShapeLayer(
+      preview.type,
+      preview.startX,
+      preview.startY,
+      preview.endX,
+      preview.endY,
+      {
+        color: preview.color,
+        filled: preview.filled,
+        lineWidth: preview.lineWidth,
+      },
+    );
+  }
+  render();
+}
+
+function cancelShape() {
+  state.shapePreview = null;
+  state.dragState = null;
+  state.isPanning = false;
+  render();
+}
+
 export function setupGestures() {
   dom.canvas.addEventListener("mousedown", begin);
   dom.canvas.addEventListener(
@@ -159,9 +222,12 @@ export function setupGestures() {
     { passive: false },
   );
 
-  for (const name of ["mouseup", "touchend", "touchcancel"])
+  window.addEventListener("mouseup", finishShape);
+  window.addEventListener("touchend", finishShape);
+  for (const name of ["mouseup", "touchend"])
     window.addEventListener(name, () => {
       state.dragState = null;
       state.isPanning = false;
     });
+  window.addEventListener("touchcancel", cancelShape);
 }

@@ -14,6 +14,7 @@ import { getElem } from "./utils.js";
  * @property {string} blendMode
  * @property {boolean} visible
  * @property {boolean} locked
+ * @property {string} [shapeType]
  * @property {ReturnType<typeof defaultFilters>} filters
  */
 
@@ -27,6 +28,11 @@ export const state = {
   layers: [],
   activeLayerId: null,
   activeTool: "move",
+  shapeType: "rectangle",
+  shapeColor: "#818cf8",
+  shapeFilled: false,
+  shapeLineWidth: 4,
+  shapePreview: null,
   isPanning: false,
   panStart: { x: 0, y: 0 },
   dragState: null,

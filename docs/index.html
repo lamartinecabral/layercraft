@@ -88,7 +88,7 @@
   <div class="flex-1 flex overflow-hidden relative">
 
     <!-- Left Toolbar -->
-    <aside class="w-14 border-r border-slate-800 bg-slate-900 flex flex-col items-center py-3 gap-3 shrink-0 z-10">
+    <aside class="w-14 border-r border-slate-800 bg-slate-900 flex flex-col items-center py-3 gap-3 shrink-0 z-10 relative">
       <button id="btn-canvas-size" class="tool-btn p-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition relative group" title="Set Canvas Size">
         <i data-lucide="square-dashed" class="w-5 h-5"></i>
         <span class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-xs rounded text-slate-200 opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none z-30">Set Canvas Size</span>
@@ -101,6 +101,39 @@
         <i data-lucide="hand" class="w-5 h-5"></i>
         <span class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-xs rounded text-slate-200 opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none z-30">Pan Viewport</span>
       </button>
+      <button id="tool-shape" class="tool-btn p-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition relative group" title="Shape Tool">
+        <i data-lucide="shapes" class="w-5 h-5"></i>
+        <span class="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-xs rounded text-slate-200 opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none z-30">Draw Shapes</span>
+      </button>
+      <div id="shape-options" class="hidden absolute left-full top-20 ml-2 w-44 p-2.5 bg-slate-900 border border-slate-700 rounded-lg shadow-xl z-40">
+        <div class="flex items-center gap-1.5 mb-2">
+          <button data-shape-type="rectangle" class="shape-option p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition" title="Rectangle" aria-label="Rectangle">
+            <i data-lucide="square" class="w-4 h-4"></i>
+          </button>
+          <button data-shape-type="ellipse" class="shape-option p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition" title="Ellipse" aria-label="Ellipse">
+            <i data-lucide="circle" class="w-4 h-4"></i>
+          </button>
+          <button data-shape-type="arrow" class="shape-option p-1.5 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition" title="Arrow" aria-label="Arrow">
+            <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+          </button>
+          <span class="text-[11px] text-slate-400 ml-1">Shape</span>
+        </div>
+        <label class="flex items-center justify-between gap-3 text-xs text-slate-300 cursor-pointer">
+          <span>Color</span>
+          <input id="shape-color-input" type="color" value="#818cf8" class="w-8 h-7 bg-transparent border-0 rounded cursor-pointer" title="Shape color">
+        </label>
+        <label class="flex items-center justify-between gap-3 mt-2 text-xs text-slate-300 cursor-pointer">
+          <span>Solid fill</span>
+          <input id="shape-filled-input" type="checkbox" class="w-4 h-4 accent-indigo-500 cursor-pointer" title="Fill shape">
+        </label>
+        <label class="block mt-2 text-xs text-slate-300 cursor-pointer">
+          <span class="flex items-center justify-between mb-1">
+            <span>Line strength</span>
+            <span id="shape-line-width-value" class="text-slate-400 font-mono">4px</span>
+          </span>
+          <input id="shape-line-width-input" type="range" min="1" max="24" step="1" value="4" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer" title="Shape line strength">
+        </label>
+      </div>
 
       <div class="w-8 h-px bg-slate-800 my-1"></div>
 
