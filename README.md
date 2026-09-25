@@ -1,6 +1,6 @@
 # LayerCraft
 
-LayerCraft is a lightweight, browser-based image editor for creating simple compositions from multiple layers. It runs entirely in the browser and renders with HTML Canvas, so your images stay on your device and no backend or project upload is required. The project began in Gemini Canvas and later evolved through Gemini CLI with the `gemini-3.5-flash-lite` model.
+LayerCraft is a lightweight, browser-based image editor for creating simple compositions from multiple layers. It runs entirely in the browser and renders with HTML Canvas, so your images stay on your device and no backend or project upload is required. The project began in Gemini Canvas, continued in Gemini CLI using the `gemini-3.5-flash-lite` model, and is currently being developed in Codex CLI with GPT Luna.
 
 ## Run locally
 

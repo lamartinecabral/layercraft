@@ -1,6 +1,8 @@
 {
-  "[html]": {
-    "editor.defaultFormatter": "vscode.html-language-features"
-  },
-  "html.format.wrapLineLength": 0
+  "editor.formatOnSave": true,
+  "editor.insertSpaces": true,
+  "editor.tabSize": 2,
+  "editor.detectIndentation": true,
+  "html.format.wrapLineLength": 0,
+  "json.format.keepLines": true
 }
